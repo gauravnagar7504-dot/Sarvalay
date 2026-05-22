@@ -1,13 +1,10 @@
 import { PrismaClient } from '@prisma/client';
 
 const prismaClientSingleton = () => {
-  const url = process.env.DATABASE_URL;
-  if (url && (url.startsWith('prisma://') || url.startsWith('prisma+postgres://'))) {
-    return new PrismaClient({
-      accelerateUrl: url,
-    });
-  }
-  return new PrismaClient();
+  const url = process.env.DATABASE_URL || 'prisma+postgres://dummy-compile-safe-url';
+  return new PrismaClient({
+    accelerateUrl: url,
+  });
 };
 
 declare global {

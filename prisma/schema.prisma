@@ -1,0 +1,134 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  name          String
+  role          Role           @default(CLIENT)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  // Relations
+  clientProjects Project[]     @relation("ClientProjects")
+  artistProjects Project[]     @relation("ArtistProjects")
+  artistProfile  ArtistProfile?
+}
+
+model ArtistProfile {
+  id           String        @id @default(uuid())
+  userId       String        @unique
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tier         ArtistTier    @default(TIER_3)
+  specialties  String[]      // e.g. ["Heritage Indian", "Abstract Geometric"]
+  isAvailable  Boolean       @default(true)
+  bio          String?
+  earningsPaid Float         @default(0)
+  earningsPend Float         @default(0)
+}
+
+model Project {
+  id            String        @id @default(uuid())
+  title         String
+  company       String        // e.g. "Taj Hotels", "WeWork"
+  clientId      String
+  client        User          @relation("ClientProjects", fields: [clientId], references: [id])
+  artistId      String?
+  artist        User?         @relation("ArtistProjects", fields: [artistId], references: [id])
+  status        ProjectStatus @default(MOCKUP_PHASE)
+  progress      Int           @default(0) // 0 to 100
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  // Relations
+  invoices      Invoice[]
+  mockups       Mockup[]
+  progressPhotos ProgressPhoto[]
+}
+
+model Invoice {
+  id           String        @id @default(uuid())
+  projectId    String
+  project      Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  amount       Float
+  milestone    MilestoneType // ADVANCE_50, MID_30, DELIVERY_20
+  isPaid       Boolean       @default(false)
+  paidAt       DateTime?
+  refId        String        @unique // e.g. "INV-9021"
+  createdAt    DateTime      @default(now())
+}
+
+model Mockup {
+  id           String        @id @default(uuid())
+  projectId    String
+  project      Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title        String        // e.g. "Option A: Heritage Fusion"
+  imageUrl     String
+  isApproved   Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+}
+
+model ProgressPhoto {
+  id           String        @id @default(uuid())
+  projectId    String
+  project      Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  imageUrl     String
+  description  String?
+  createdAt    DateTime      @default(now())
+}
+
+model Lead {
+  id           String        @id @default(uuid())
+  name         String
+  email        String
+  company      String
+  industry     String
+  wallWidth    Float?
+  wallHeight   Float?
+  wallPhotoUrl String?
+  preferences  String[]
+  serviceType  String        // e.g. "Wall Murals", "3D Installations"
+  status       LeadStatus    @default(SUBMITTED)
+  createdAt    DateTime      @default(now())
+}
+
+enum Role {
+  CLIENT
+  ARTIST
+  ADMIN
+}
+
+enum ArtistTier {
+  TIER_1_ELITE
+  TIER_2_PRO
+  TIER_3
+}
+
+enum ProjectStatus {
+  MOCKUP_PHASE
+  EXECUTING
+  QA_CHECK
+  COMPLETED
+}
+
+enum MilestoneType {
+  ADVANCE_50
+  MID_30
+  DELIVERY_20
+}
+
+enum LeadStatus {
+  SUBMITTED
+  MOCKUP_GENERATED
+  CONSULTED
+  PROPOSAL_SENT
+  CLOSED
+}
